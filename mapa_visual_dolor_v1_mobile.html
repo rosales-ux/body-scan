@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#f4f8fb"/>
+  <title>Mapa Visual de Dolor - V1 Mobile</title>
+  <style>
+    :root{
+      --bg:#f4f8fb;
+      --card:#ffffff;
+      --text:#173047;
+      --muted:#6d8090;
+      --primary:#2f80ed;
+      --primary-soft:#eaf3ff;
+      --border:#dce7f0;
+      --success:#1e9e68;
+      --warning:#f0a43a;
+      --danger:#df5757;
+      --shadow:0 14px 38px rgba(25,58,86,.10);
+      --radius:22px;
+      --safe-bottom:env(safe-area-inset-bottom, 0px);
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    body{min-height:100dvh;overflow-x:hidden}
+    button,input,select{font:inherit}
+    button{touch-action:manipulation}
+
+    .app{max-width:1180px;margin:0 auto;padding:14px}
+    .topbar{
+      position:sticky;top:0;z-index:20;
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      padding:10px 0 12px;
+      background:linear-gradient(180deg,rgba(244,248,251,.98),rgba(244,248,251,.90),rgba(244,248,251,0));
+      backdrop-filter:blur(8px);
+    }
+    .brand{display:flex;align-items:center;gap:10px;min-width:0}
+    .brand-mark{
+      width:40px;height:40px;border-radius:13px;background:var(--primary);color:white;
+      display:grid;place-items:center;font-weight:900;box-shadow:0 8px 20px rgba(47,128,237,.25);flex:0 0 auto
+    }
+    .brand h1{font-size:17px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .brand small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+    .progress-wrap{width:250px}
+    .progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px}
+    .progress{height:7px;background:#dce7ef;border-radius:999px;overflow:hidden}
+    .progress>div{height:100%;width:16%;background:var(--primary);transition:.25s}
+
+    .layout{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;align-items:start}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .body-card,.panel-card{padding:18px}
+    .eyebrow{text-transform:uppercase;letter-spacing:.12em;color:var(--primary);font-size:10px;font-weight:800}
+    h2{font-size:25px;line-height:1.15;margin:7px 0 8px}
+    p.lead{color:var(--muted);line-height:1.5;margin:0 0 12px;font-size:14px}
+
+    .control-row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+    .segmented{display:flex;gap:6px;padding:5px;background:#eef4f8;border-radius:13px;width:max-content;max-width:100%}
+    .segmented button{
+      min-height:42px;border:0;background:transparent;padding:8px 12px;border-radius:10px;color:var(--muted);cursor:pointer;font-size:13px
+    }
+    .segmented button.active{background:#fff;color:var(--text);box-shadow:0 4px 12px rgba(33,67,94,.08)}
+
+    .body-stage{
+      display:flex;justify-content:center;align-items:center;
+      min-height:540px;background:radial-gradient(circle at 50% 25%,#fcfeff,#eef4f8);
+      border:1px solid var(--border);border-radius:20px;overflow:hidden;position:relative;padding:10px
+    }
+    .body-svg{width:100%;height:auto;max-width:360px;max-height:520px;display:block;touch-action:manipulation}
+    .body-part{fill:#dce4ea;stroke:#fff;stroke-width:2;cursor:pointer;transition:.12s}
+    .body-part:active{fill:#bdd6ee}
+    .body-part.selected{fill:var(--primary)}
+    .body-label{
+      position:absolute;left:50%;bottom:12px;transform:translateX(-50%);
+      background:rgba(23,48,71,.92);color:white;padding:8px 12px;border-radius:999px;
+      font-size:12px;opacity:0;pointer-events:none;transition:.18s;white-space:nowrap;max-width:88%;overflow:hidden;text-overflow:ellipsis
+    }
+    .body-label.show{opacity:1}
+    .legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;color:var(--muted);font-size:11px}
+    .legend span{display:flex;align-items:center;gap:6px}
+    .dot{width:9px;height:9px;border-radius:50%;background:#dce4ea}.dot.blue{background:var(--primary)}
+
+    .step{display:none;padding-bottom:4px}.step.active{display:block}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .option{
+      border:1px solid var(--border);border-radius:16px;padding:14px;background:#fff;cursor:pointer;
+      min-height:96px;transition:.12s;user-select:none
+    }
+    .option:active{transform:scale(.99)}
+    .option.selected{border-color:var(--primary);background:var(--primary-soft)}
+    .option .icon{font-size:23px;margin-bottom:6px}
+    .option strong{display:block;font-size:14px}
+    .option small{display:block;color:var(--muted);font-size:12px;line-height:1.35;margin-top:4px}
+
+    .section-title{font-size:13px;font-weight:800;margin:18px 0 9px}
+    .slider-wrap{border:1px solid var(--border);border-radius:16px;padding:14px}
+    .slider-row{display:flex;align-items:center;gap:12px}
+    input[type=range]{width:100%;accent-color:var(--primary);height:36px}
+    .score{width:50px;height:50px;border-radius:15px;background:var(--primary-soft);color:var(--primary);display:grid;place-items:center;font-weight:900;font-size:20px;flex:0 0 auto}
+    .chips{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{
+      min-height:42px;border:1px solid var(--border);background:#fff;border-radius:999px;
+      padding:9px 12px;cursor:pointer;color:#4d6273;font-size:13px
+    }
+    .chip.selected{background:var(--primary-soft);border-color:#95bee9;color:var(--primary)}
+    .field{width:100%;min-height:46px;padding:11px 13px;border:1px solid var(--border);border-radius:13px;background:white;color:var(--text)}
+
+    .summary-zone{background:#f7fafc;border:1px solid var(--border);border-radius:17px;padding:15px;margin:14px 0}
+    .result-card{border-radius:17px;padding:16px;margin:12px 0;border:1px solid var(--border)}
+    .triage{display:flex;align-items:flex-start;gap:12px}
+    .triage .badge{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:white;font-weight:900;flex:0 0 auto}
+    .triage.green .badge{background:var(--success)}.triage.yellow .badge{background:var(--warning)}.triage.red .badge{background:var(--danger)}
+    .triage h3{margin:1px 0 5px;font-size:16px}.triage p{margin:0;color:var(--muted);line-height:1.45;font-size:13px}
+    .doctor-box{white-space:pre-wrap;background:#122536;color:#edf6fb;border-radius:17px;padding:15px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;line-height:1.5}
+    .footer-note{margin-top:14px;font-size:11px;color:var(--muted);line-height:1.45}
+
+    .nav{display:flex;justify-content:space-between;gap:10px;margin-top:22px}
+    .btn{min-height:46px;border:0;border-radius:14px;padding:11px 16px;cursor:pointer;font-weight:800}
+    .btn.secondary{background:#eef4f8;color:var(--text)}
+    .btn.primary{background:var(--primary);color:#fff}
+    .btn.primary:disabled{background:#aac5e3;cursor:not-allowed}
+
+    .mobile-bar{display:none}
+
+    @media (max-width: 820px){
+      .app{padding:10px 10px calc(90px + var(--safe-bottom))}
+      .topbar{padding-top:4px}
+      .progress-wrap{display:none}
+      .layout{grid-template-columns:1fr;gap:12px}
+      .body-card,.panel-card{padding:14px;border-radius:18px}
+      .body-card{min-height:auto}
+      .panel-card{min-height:auto}
+      h2{font-size:22px}
+      .body-stage{min-height:420px;padding:4px}
+      .body-svg{max-width:300px;max-height:400px}
+      .grid2{grid-template-columns:1fr}
+      .option{min-height:76px;padding:12px}
+      .option .icon{font-size:21px}
+      .control-row{justify-content:space-between}
+      .segmented{width:100%}
+      .segmented button{flex:1}
+      .legend{margin-bottom:2px}
+      .panel-card .nav{display:none}
+      .mobile-bar{
+        position:fixed;left:0;right:0;bottom:0;z-index:50;
+        display:flex;gap:10px;padding:10px 12px calc(10px + var(--safe-bottom));
+        background:rgba(255,255,255,.96);border-top:1px solid var(--border);backdrop-filter:blur(12px)
+      }
+      .mobile-bar .btn{flex:1}
+      .mobile-bar .btn[hidden]{display:none}
+    }
+
+    @media (max-width: 390px){
+      .brand small{display:none}
+      .brand h1{font-size:15px}
+      .body-stage{min-height:380px}
+      .body-svg{max-width:270px;max-height:360px}
+      .chip{font-size:12px;padding:8px 10px}
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">+</div>
+      <div>
+        <h1>Mapa Visual de Dolor</h1>
+        <small>V1 · Mobile friendly</small>
+      </div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-label"><span id="progressText">Paso 1 de 6</span><span id="progressPct">16%</span></div>
+      <div class="progress"><div id="progressBar"></div></div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <section class="card body-card">
+      <div class="eyebrow">Mapa corporal</div>
+      <h2>¿Dónde sientes la molestia?</h2>
+      <p class="lead">Toca la zona aproximada. Puedes cambiar entre frente y atrás.</p>
+
+      <div class="control-row">
+        <div class="segmented">
+          <button class="profile active" data-profile="adulto">Adulto</button>
+          <button class="profile" data-profile="mujer">Mujer</button>
+          <button class="profile" data-profile="infantil">Infantil</button>
+        </div>
+        <div class="segmented">
+          <button class="view active" data-view="front">Frente</button>
+          <button class="view" data-view="back">Atrás</button>
+        </div>
+      </div>
+
+      <div class="body-stage">
+        <svg id="frontSvg" class="body-svg" viewBox="0 0 260 620" aria-label="Cuerpo humano frontal" role="img">
+          <circle class="body-part" data-region="cabeza" cx="130" cy="54" r="36"/>
+          <rect class="body-part" data-region="cuello" x="113" y="88" width="34" height="36" rx="12"/>
+          <path class="body-part" data-region="pecho" d="M84 122 Q130 108 176 122 L185 226 Q130 244 75 226 Z"/>
+          <path class="body-part" data-region="abdomen" d="M84 227 Q130 240 176 227 L168 331 Q130 350 92 331 Z"/>
+          <path class="body-part" data-region="pelvis" d="M92 330 Q130 350 168 330 L175 393 Q130 413 85 393 Z"/>
+          <path class="body-part" data-region="brazo_izquierdo" d="M78 130 Q56 134 48 172 L34 286 Q29 308 47 313 Q62 316 68 293 L81 185 Z"/>
+          <path class="body-part" data-region="brazo_derecho" d="M182 130 Q204 134 212 172 L226 286 Q231 308 213 313 Q198 316 192 293 L179 185 Z"/>
+          <path class="body-part" data-region="mano_izquierda" d="M36 305 Q25 311 26 329 L32 357 Q38 370 51 359 L54 313 Z"/>
+          <path class="body-part" data-region="mano_derecha" d="M224 305 Q235 311 234 329 L228 357 Q222 370 209 359 L206 313 Z"/>
+          <path class="body-part" data-region="muslo_izquierdo" d="M88 391 L129 397 L119 506 Q103 523 83 508 Z"/>
+          <path class="body-part" data-region="muslo_derecho" d="M172 391 L131 397 L141 506 Q157 523 177 508 Z"/>
+          <path class="body-part" data-region="pierna_izquierda" d="M83 507 Q103 520 119 506 L112 590 Q101 609 87 591 Z"/>
+          <path class="body-part" data-region="pierna_derecha" d="M177 507 Q157 520 141 506 L148 590 Q159 609 173 591 Z"/>
+          <ellipse class="body-part" data-region="pie_izquierdo" cx="97" cy="598" rx="25" ry="12"/>
+          <ellipse class="body-part" data-region="pie_derecho" cx="163" cy="598" rx="25" ry="12"/>
+        </svg>
+
+        <svg id="backSvg" class="body-svg" viewBox="0 0 260 620" aria-label="Cuerpo humano posterior" role="img" style="display:none">
+          <circle class="body-part" data-region="cabeza_posterior" cx="130" cy="54" r="36"/>
+          <rect class="body-part" data-region="cuello_posterior" x="113" y="88" width="34" height="36" rx="12"/>
+          <path class="body-part" data-region="espalda_alta" d="M84 122 Q130 108 176 122 L183 219 Q130 237 77 219 Z"/>
+          <path class="body-part" data-region="espalda_baja" d="M80 218 Q130 237 180 218 L169 331 Q130 347 91 331 Z"/>
+          <path class="body-part" data-region="gluteos" d="M91 330 Q130 347 169 330 L175 393 Q130 415 85 393 Z"/>
+          <path class="body-part" data-region="brazo_izquierdo_post" d="M78 130 Q56 134 48 172 L34 286 Q29 308 47 313 Q62 316 68 293 L81 185 Z"/>
+          <path class="body-part" data-region="brazo_derecho_post" d="M182 130 Q204 134 212 172 L226 286 Q231 308 213 313 Q198 316 192 293 L179 185 Z"/>
+          <path class="body-part" data-region="muslo_izquierdo_post" d="M88 391 L129 397 L119 506 Q103 523 83 508 Z"/>
+          <path class="body-part" data-region="muslo_derecho_post" d="M172 391 L131 397 L141 506 Q157 523 177 508 Z"/>
+          <path class="body-part" data-region="pantorrilla_izquierda" d="M83 507 Q103 520 119 506 L112 590 Q101 609 87 591 Z"/>
+          <path class="body-part" data-region="pantorrilla_derecha" d="M177 507 Q157 520 141 506 L148 590 Q159 609 173 591 Z"/>
+          <ellipse class="body-part" data-region="pie_izquierdo_post" cx="97" cy="598" rx="25" ry="12"/>
+          <ellipse class="body-part" data-region="pie_derecho_post" cx="163" cy="598" rx="25" ry="12"/>
+        </svg>
+        <div id="bodyLabel" class="body-label"></div>
+      </div>
+
+      <div class="legend">
+        <span><i class="dot"></i> Zona disponible</span>
+        <span><i class="dot blue"></i> Zona seleccionada</span>
+      </div>
+    </section>
+
+    <aside class="card panel-card">
+      <div class="step active" data-step="1">
+        <div class="eyebrow">Paso 1</div>
+        <h2>Selecciona una zona</h2>
+        <p class="lead">No necesitas conocer el nombre anatómico.</p>
+        <div class="summary-zone" id="zoneSummary">
+          <strong>Aún no has seleccionado una zona.</strong>
+          <div style="color:var(--muted);margin-top:6px;font-size:13px">Toca el cuerpo para continuar.</div>
+        </div>
+        <div class="nav"><span></span><button class="btn primary" id="to2" disabled>Continuar</button></div>
+      </div>
+
+      <div class="step" data-step="2">
+        <div class="eyebrow">Paso 2</div><h2>¿Qué tan profundo se siente?</h2>
+        <p class="lead">Selecciona la opción que más se parezca.</p>
+        <div class="grid2" id="depthOptions">
+          <div class="option" data-value="superficial"><div class="icon">🖐️</div><strong>Superficial</strong><small>Piel, roce, ardor o sensibilidad externa.</small></div>
+          <div class="option" data-value="muscular"><div class="icon">💪</div><strong>Músculo / tendón</strong><small>Se siente al mover, estirar o presionar.</small></div>
+          <div class="option" data-value="hueso"><div class="icon">🦴</div><strong>Hueso / articulación</strong><small>Molestia profunda al apoyar o mover.</small></div>
+          <div class="option" data-value="interno"><div class="icon">◉</div><strong>Muy adentro</strong><small>Sensación interna difícil de localizar.</small></div>
+          <div class="option" data-value="no_se"><div class="icon">?</div><strong>No lo sé</strong><small>Está bien. Seguimos con otras preguntas.</small></div>
+        </div>
+        <div class="nav"><button class="btn secondary back">Atrás</button><button class="btn primary next" disabled>Continuar</button></div>
+      </div>
+
+      <div class="step" data-step="3">
+        <div class="eyebrow">Paso 3</div><h2>¿Cómo se siente?</h2>
+        <div class="grid2" id="sensationOptions">
+          <div class="option" data-value="quemante"><div class="icon">🔥</div><strong>Quemante</strong><small>Ardor, fuego o acidez.</small></div>
+          <div class="option" data-value="punzante"><div class="icon">⚡</div><strong>Punzante</strong><small>Aguja, pinchazo o descarga.</small></div>
+          <div class="option" data-value="opresivo"><div class="icon">🎈</div><strong>Opresivo</strong><small>Presión, peso o apretón.</small></div>
+          <div class="option" data-value="sordo"><div class="icon">●</div><strong>Sordo</strong><small>Constante o difícil de precisar.</small></div>
+          <div class="option" data-value="oleadas"><div class="icon">🌊</div><strong>En oleadas</strong><small>Va y viene por momentos.</small></div>
+          <div class="option" data-value="hormigueo"><div class="icon">✦</div><strong>Hormigueo</strong><small>Cosquilleo, corriente o entumecimiento.</small></div>
+        </div>
+        <div class="nav"><button class="btn secondary back">Atrás</button><button class="btn primary next" disabled>Continuar</button></div>
+      </div>
+
+      <div class="step" data-step="4">
+        <div class="eyebrow">Paso 4</div><h2>Intensidad y duración</h2>
+        <div class="section-title">Intensidad</div>
+        <div class="slider-wrap">
+          <div class="slider-row">
+            <input id="intensity" type="range" min="1" max="10" value="5"/>
+            <div class="score" id="score">5</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;color:var(--muted);font-size:11px;margin-top:6px"><span>Leve</span><span>Moderado</span><span>Severo</span></div>
+        </div>
+        <div class="section-title">¿Desde cuándo?</div>
+        <select id="duration" class="field">
+          <option value="menos de 1 hora">Menos de 1 hora</option>
+          <option value="hoy">Hoy</option>
+          <option value="1 a 3 días">1 a 3 días</option>
+          <option value="4 a 7 días">4 a 7 días</option>
+          <option value="más de una semana">Más de una semana</option>
+          <option value="más de un mes">Más de un mes</option>
+        </select>
+        <div class="section-title">¿Cómo comenzó?</div>
+        <div class="chips" id="onsetChips">
+          <button class="chip selected" data-value="progresivo">Poco a poco</button>
+          <button class="chip" data-value="repentino">De repente</button>
+          <button class="chip" data-value="después de golpe">Después de un golpe</button>
+          <button class="chip" data-value="después de ejercicio">Después de ejercicio</button>
+        </div>
+        <div class="nav"><button class="btn secondary back">Atrás</button><button class="btn primary next">Continuar</button></div>
+      </div>
+
+      <div class="step" data-step="5">
+        <div class="eyebrow">Paso 5</div><h2>¿Qué lo empeora o acompaña?</h2>
+        <div class="section-title">Disparadores</div>
+        <div class="chips multi" id="triggerChips">
+          <button class="chip" data-value="al moverme">Al moverme</button>
+          <button class="chip" data-value="al respirar profundo">Al respirar profundo</button>
+          <button class="chip" data-value="al presionar">Al presionar</button>
+          <button class="chip" data-value="después de comer">Después de comer</button>
+          <button class="chip" data-value="al caminar o apoyar">Al caminar o apoyar</button>
+          <button class="chip" data-value="en reposo">En reposo</button>
+        </div>
+        <div class="section-title">Síntomas asociados</div>
+        <div class="chips multi" id="symptomChips">
+          <button class="chip" data-value="fiebre">Fiebre</button>
+          <button class="chip" data-value="mareo">Mareo</button>
+          <button class="chip" data-value="náusea o vómitos">Náusea / vómitos</button>
+          <button class="chip" data-value="dificultad para respirar">Dificultad para respirar</button>
+          <button class="chip" data-value="debilidad o pérdida de sensibilidad">Debilidad / pérdida de sensibilidad</button>
+          <button class="chip" data-value="ninguno">Ninguno</button>
+        </div>
+        <div class="nav"><button class="btn secondary back">Atrás</button><button class="btn primary next">Ver resultado</button></div>
+      </div>
+
+      <div class="step" data-step="6">
+        <div class="eyebrow">Resultado</div><h2>Resumen de tu molestia</h2>
+        <div class="result-card">
+          <strong id="resultRegion">Zona seleccionada</strong>
+          <div style="color:var(--muted);font-size:13px;margin-top:7px" id="resultDetails"></div>
+        </div>
+        <div class="result-card">
+          <div id="triageBox" class="triage green">
+            <div class="badge">●</div>
+            <div><h3 id="triageTitle">Orientación general</h3><p id="triageText"></p></div>
+          </div>
+        </div>
+        <div class="section-title">Texto para compartir con un profesional</div>
+        <div class="doctor-box" id="doctorText"></div>
+        <div class="nav"><button class="btn secondary" id="restart">Empezar de nuevo</button><button class="btn primary" id="copyDoctor">Copiar para mi doctor</button></div>
+        <div class="footer-note">Este prototipo ofrece orientación descriptiva y de prioridad, no un diagnóstico médico. Ante una emergencia o empeoramiento importante, busca atención profesional.</div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div class="mobile-bar">
+  <button class="btn secondary" id="mobileBack" hidden>Atrás</button>
+  <button class="btn primary" id="mobileNext" disabled>Continuar</button>
+</div>
+
+<script>
+const state={profile:'adulto',view:'front',region:null,depth:null,sensation:null,intensity:5,duration:'menos de 1 hora',onset:'progresivo',triggers:[],symptoms:[]};
+const labels={
+  cabeza:'Cabeza',cuello:'Cuello anterior',pecho:'Pecho / tórax anterior',abdomen:'Abdomen',pelvis:'Pelvis / bajo vientre',
+  brazo_izquierdo:'Brazo izquierdo',brazo_derecho:'Brazo derecho',mano_izquierda:'Mano izquierda',mano_derecha:'Mano derecha',
+  muslo_izquierdo:'Muslo izquierdo',muslo_derecho:'Muslo derecho',pierna_izquierda:'Pierna izquierda',pierna_derecha:'Pierna derecha',
+  pie_izquierdo:'Pie izquierdo',pie_derecho:'Pie derecho',cabeza_posterior:'Parte posterior de la cabeza',cuello_posterior:'Cuello posterior',
+  espalda_alta:'Espalda alta',espalda_baja:'Región lumbar / espalda baja',gluteos:'Glúteos / pelvis posterior',
+  brazo_izquierdo_post:'Brazo izquierdo posterior',brazo_derecho_post:'Brazo derecho posterior',muslo_izquierdo_post:'Muslo izquierdo posterior',
+  muslo_derecho_post:'Muslo derecho posterior',pantorrilla_izquierda:'Pantorrilla izquierda',pantorrilla_derecha:'Pantorrilla derecha',
+  pie_izquierdo_post:'Parte posterior del pie izquierdo',pie_derecho_post:'Parte posterior del pie derecho'
+};
+const depthLabels={superficial:'superficial / piel',muscular:'músculo o tendón',hueso:'hueso o articulación',interno:'profunda / interna',no_se:'profundidad no identificada'};
+let currentStep=1;
+
+const mobileBack=document.getElementById('mobileBack');
+const mobileNext=document.getElementById('mobileNext');
+
+function updateMobileBar(){
+  if(currentStep===1){
+    mobileBack.hidden=true;
+    mobileNext.hidden=false;
+    mobileNext.textContent='Continuar';
+    mobileNext.disabled=!state.region;
+  }else if(currentStep===2){
+    mobileBack.hidden=false; mobileNext.hidden=false;
+    mobileNext.textContent='Continuar'; mobileNext.disabled=!state.depth;
+  }else if(currentStep===3){
+    mobileBack.hidden=false; mobileNext.hidden=false;
+    mobileNext.textContent='Continuar'; mobileNext.disabled=!state.sensation;
+  }else if(currentStep===4){
+    mobileBack.hidden=false; mobileNext.hidden=false;
+    mobileNext.textContent='Continuar'; mobileNext.disabled=false;
+  }else if(currentStep===5){
+    mobileBack.hidden=false; mobileNext.hidden=false;
+    mobileNext.textContent='Ver resultado'; mobileNext.disabled=false;
+  }else{
+    mobileBack.hidden=true; mobileNext.hidden=true;
+  }
+}
+
+function setStep(n){
+  currentStep=Math.max(1,Math.min(6,n));
+  document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+  document.querySelector(`.step[data-step="${currentStep}"]`).classList.add('active');
+  const pct=Math.round((currentStep/6)*100);
+  document.getElementById('progressText').textContent=`Paso ${currentStep} de 6`;
+  document.getElementById('progressPct').textContent=`${pct}%`;
+  document.getElementById('progressBar').style.width=`${pct}%`;
+  if(currentStep===6) buildResult();
+  updateMobileBar();
+  if(window.innerWidth<=820){
+    document.querySelector('.panel-card').scrollIntoView({behavior:'smooth',block:'start'});
+  }
+}
+
+document.querySelectorAll('.profile').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.profile').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');state.profile=b.dataset.profile;
+}));
+
+document.querySelectorAll('.view').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');state.view=b.dataset.view;
+  document.getElementById('frontSvg').style.display=state.view==='front'?'block':'none';
+  document.getElementById('backSvg').style.display=state.view==='back'?'block':'none';
+}));
+
+document.querySelectorAll('.body-part').forEach(part=>{
+  const selectPart=(e)=>{
+    e.preventDefault();
+    document.querySelectorAll('.body-part').forEach(x=>x.classList.remove('selected'));
+    part.classList.add('selected');
+    state.region=part.dataset.region;
+    const name=labels[state.region]||state.region;
+    const bodyLabel=document.getElementById('bodyLabel');
+    bodyLabel.textContent=name;bodyLabel.classList.add('show');
+    document.getElementById('zoneSummary').innerHTML=`<strong>${name}</strong><div style="color:var(--muted);margin-top:6px;font-size:13px">Vista: ${state.view==='front'?'frontal':'posterior'} · Perfil: ${state.profile}</div>`;
+    document.getElementById('to2').disabled=false;
+    updateMobileBar();
+  };
+  part.addEventListener('pointerup',selectPart);
+});
+
+document.getElementById('to2').onclick=()=>setStep(2);
+
+function selectableGroup(containerId,stateKey){
+  document.querySelectorAll(`#${containerId} .option`).forEach(opt=>{
+    opt.addEventListener('pointerup',e=>{
+      e.preventDefault();
+      document.querySelectorAll(`#${containerId} .option`).forEach(x=>x.classList.remove('selected'));
+      opt.classList.add('selected');state[stateKey]=opt.dataset.value;
+      const next=opt.closest('.step').querySelector('.next'); if(next) next.disabled=false;
+      updateMobileBar();
+    });
+  });
+}
+selectableGroup('depthOptions','depth');
+selectableGroup('sensationOptions','sensation');
+
+document.querySelectorAll('.back').forEach(btn=>btn.addEventListener('click',()=>setStep(currentStep-1)));
+document.querySelectorAll('.next').forEach(btn=>btn.addEventListener('click',()=>setStep(currentStep+1)));
+
+mobileBack.addEventListener('click',()=>setStep(currentStep-1));
+mobileNext.addEventListener('click',()=>{
+  if(mobileNext.disabled)return;
+  setStep(currentStep+1);
+});
+
+document.getElementById('intensity').addEventListener('input',e=>{
+  state.intensity=Number(e.target.value);document.getElementById('score').textContent=state.intensity;
+});
+document.getElementById('duration').addEventListener('change',e=>state.duration=e.target.value);
+
+document.querySelectorAll('#onsetChips .chip').forEach(btn=>btn.addEventListener('click',()=>{
+  document.querySelectorAll('#onsetChips .chip').forEach(x=>x.classList.remove('selected'));
+  btn.classList.add('selected');state.onset=btn.dataset.value;
+}));
+
+function setupMulti(id,key){
+  document.querySelectorAll(`#${id} .chip`).forEach(btn=>btn.addEventListener('click',()=>{
+    if(id==='symptomChips' && btn.dataset.value==='ninguno'){
+      document.querySelectorAll(`#${id} .chip`).forEach(x=>x.classList.remove('selected'));
+      btn.classList.add('selected');
+    }else{
+      const none=document.querySelector(`#${id} .chip[data-value="ninguno"]`);
+      if(none)none.classList.remove('selected');
+      btn.classList.toggle('selected');
+    }
+    state[key]=[...document.querySelectorAll(`#${id} .chip.selected`)].map(x=>x.dataset.value);
+  }));
+}
+setupMulti('triggerChips','triggers');setupMulti('symptomChips','symptoms');
+
+function buildResult(){
+  const region=labels[state.region]||'Zona seleccionada';
+  document.getElementById('resultRegion').textContent=region;
+  document.getElementById('resultDetails').textContent=`Sensación ${state.sensation}, intensidad ${state.intensity}/10, profundidad ${depthLabels[state.depth]||'no definida'}, duración ${state.duration}.`;
+
+  const redFlags=state.symptoms.includes('dificultad para respirar')||
+    state.symptoms.includes('debilidad o pérdida de sensibilidad')||
+    (state.region==='pecho'&&state.intensity>=7)||state.intensity>=9;
+
+  const yellowFlags=!redFlags&&(state.intensity>=6||
+    state.duration==='más de una semana'||state.duration==='más de un mes'||
+    state.symptoms.includes('fiebre')||state.symptoms.includes('náusea o vómitos')||state.onset==='repentino');
+
+  const box=document.getElementById('triageBox');
+  box.className='triage '+(redFlags?'red':yellowFlags?'yellow':'green');
+
+  if(redFlags){
+    document.getElementById('triageTitle').textContent='Atención prioritaria';
+    document.getElementById('triageText').textContent='Tus respuestas incluyen señales que justifican una evaluación médica urgente o prioritaria. Este resultado no sustituye una valoración profesional.';
+  }else if(yellowFlags){
+    document.getElementById('triageTitle').textContent='Conviene consultar';
+    document.getElementById('triageText').textContent='Por intensidad, duración o síntomas asociados, sería prudente conversar con un profesional de salud si persiste, empeora o limita tus actividades.';
+  }else{
+    document.getElementById('triageTitle').textContent='Monitoreo y autocuidado';
+    document.getElementById('triageText').textContent='No aparecen señales de alarma evidentes en este prototipo. Observa la evolución y busca atención si empeora, persiste o aparecen nuevos síntomas.';
+  }
+
+  const triggers=state.triggers.length?state.triggers.join(', '):'sin disparadores seleccionados';
+  const symptoms=state.symptoms.length?state.symptoms.join(', '):'sin síntomas asociados seleccionados';
+  document.getElementById('doctorText').textContent=
+`Hola doctor. Registré una molestia en ${region.toLowerCase()}.
+La siento a nivel ${depthLabels[state.depth]||'no definido'}, con sensación ${state.sensation}.
+Intensidad: ${state.intensity}/10.
+Duración: ${state.duration}.
+Inicio: ${state.onset}.
+Empeora o aparece: ${triggers}.
+Síntomas asociados: ${symptoms}.`;
+}
+
+async function copyText(text){
+  try{
+    if(navigator.clipboard && window.isSecureContext){
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  }catch(e){}
+  try{
+    const ta=document.createElement('textarea');
+    ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.focus();ta.select();
+    const ok=document.execCommand('copy');document.body.removeChild(ta);return ok;
+  }catch(e){return false}
+}
+
+document.getElementById('copyDoctor').addEventListener('click',async()=>{
+  const b=document.getElementById('copyDoctor');
+  const ok=await copyText(document.getElementById('doctorText').textContent);
+  const old=b.textContent;b.textContent=ok?'Copiado ✓':'Mantén presionado para copiar';
+  setTimeout(()=>b.textContent=old,1600);
+});
+document.getElementById('restart').addEventListener('click',()=>location.reload());
+
+window.addEventListener('resize',updateMobileBar);
+updateMobileBar();
+</script>
+</body>
+</html>
